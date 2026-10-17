@@ -1,0 +1,20 @@
+:root{--fg:#222;--muted:#666;--accent:#1a4f8b;--bg:#fff;--line:#e5e5e5}
+@media(prefers-color-scheme:dark){:root{--fg:#e6e6e6;--muted:#999;--accent:#7fb2ee;--bg:#161616;--line:#333}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 Georgia,"Times New Roman",serif}
+.wrap{max-width:760px;margin:0 auto;padding:0 1.25rem 4rem}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:.5rem;padding:1.5rem 0;border-bottom:1px solid var(--line);margin-bottom:2rem}
+header .name{font-weight:bold;font-size:1.1rem;color:var(--fg);text-decoration:none}
+nav a{margin-left:1.25rem;color:var(--muted);text-decoration:none}
+nav a:hover,nav a.active{color:var(--accent)}
+a{color:var(--accent)}
+h1{font-size:2rem;margin:.2em 0}
+h2{font-size:1.25rem;margin:2rem 0 .5rem;border-bottom:1px solid var(--line);padding-bottom:.2rem}
+.muted{color:var(--muted)}
+.item{margin:1rem 0}
+.item .row{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.item .title{font-weight:bold}
+.item .date{color:var(--muted);white-space:nowrap}
+ul{margin:.3rem 0;padding-left:1.3rem}
+footer{margin-top:3rem;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:1rem}
+.btn{display:inline-block;border:1px solid var(--accent);padding:.25rem .8rem;border-radius:4px;text-decoration:none;margin-right:.5rem}
