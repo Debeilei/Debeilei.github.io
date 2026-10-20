@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exit Distribution of the Upper Half-Plane Is Cauchy · Debeilei Wang</title>
+<style>
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --fg:#15202b; --muted:#566574; --border:#d3dae1;
+  --grid:#d6dde4; --left:#1d4ed8; --right:#be185d; --btn:#15202b; --btnfg:#ffffff;
+  --tint:#f3f7fc; --below:#e3e8ed;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#12161b; --panel:#1a2028; --fg:#e8edf2; --muted:#93a1af; --border:#2b343f;
+    --grid:#2f3944; --left:#6ea8ff; --right:#f472b6; --btn:#e8edf2; --btnfg:#12161b;
+    --tint:#1f2731; --below:#14181e;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.55}
+main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+h1{font-family:var(--serif);font-size:clamp(26px,4vw,36px);margin:0 0 6px;font-weight:600;letter-spacing:.01em}
+.back{margin:0 0 14px;font-size:14px}
+.back a{color:var(--muted);text-decoration:none}
+.lede{margin:0 0 20px;color:var(--muted);max-width:64ch}
+.controls{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;margin:0 0 16px}
+label.sl{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+label.sl output{font-family:var(--mono);color:var(--fg);min-width:3em}
+input[type=range]{width:140px;accent-color:var(--left)}
+button{border:1px solid var(--border);background:var(--panel);color:var(--fg);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+button.main{background:var(--btn);color:var(--btnfg);border-color:var(--btn)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--left);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 12px 10px}
+.panel h2{font-family:var(--serif);font-size:18px;font-weight:600;margin:0 0 2px}
+.panel p.sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+canvas{display:block;width:100%}
+#cP{aspect-ratio:16/6.4}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:16px}
+.two canvas{aspect-ratio:16/10}
+.read{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:8px;font-size:13.5px;color:var(--muted)}
+.read b{font-family:var(--mono);font-weight:500;color:var(--fg)}
+.guide{margin-top:16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.guide h2{font-family:var(--serif);font-size:18px;margin:0 0 6px;font-weight:600}
+.guide ol{margin:0;padding-left:1.2em;font-size:14.5px}
+.guide li{margin:6px 0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+.i{font-family:var(--serif);font-style:italic}
+</style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../notes.html">← Reading Notes</a></p>
+  <h1>The Exit Distribution of the Upper Half-Plane Is Cauchy</h1>
+  <p class="lede">Run a two-dimensional Brownian motion from <span class="i">z₀ = x₀ + i y₀</span>. Its vertical component is certain to hit 0, and the horizontal position at that moment is the exit position <span class="i">X<sub>T</sub></span>. Sample many times and watch the histogram settle onto the Cauchy density.</p>
+
+  <div class="controls">
+    <label class="sl">Start x-coordinate x₀ <input id="sx" type="range" min="-3" max="3" step="0.5" value="1"><output id="ox">1.0</output></label>
+    <label class="sl">Start height y₀ <input id="sy" type="range" min="0.3" max="2.5" step="0.1" value="1"><output id="oy">1.0</output></label>
+    <label class="sl">Animation speed <input id="ss" type="range" min="1" max="20" step="1" value="2"><output id="os">2</output></label>
+    <button id="bPause">Pause</button>
+    <button id="bNew">New path</button>
+    <button id="bFast" class="main">Fast sample ×500</button>
+    <button id="bClear">Clear statistics</button>
+  </div>
+
+  <section class="panel">
+    <h2>One path in the upper half-plane</h2>
+    <p class="sub">The blue line is the path and the pink dot is where it exits on the real axis. The short ticks below the axis are previous exit positions.</p>
+    <canvas id="cP" aria-label="Brownian path and exit position in the upper half-plane"></canvas>
+    <div class="read"><span id="rPath">&nbsp;</span></div>
+  </section>
+
+  <div class="two">
+    <section class="panel">
+      <h2>The same path, split into two one-dimensional Brownian motions</h2>
+      <p class="sub"><span class="sw" style="background:var(--right)"></span>Pink line: vertical component Y<sub>t</sub>; the time it hits 0 is T.<span class="sw" style="background:var(--left)"></span>Blue line: horizontal component X<sub>t</sub>, independent of Y. The horizontal axis is scaled by √t.</p>
+      <canvas id="cS" aria-label="Vertical and horizontal components over time"></canvas>
+      <div class="read"><span>Exit time T = <b id="rT">–</b></span><span>Exit position X<sub>T</sub> = <b id="rX">–</b></span></div>
+    </section>
+    <section class="panel">
+      <h2>Histogram of exit positions</h2>
+      <p class="sub">The solid line is the Cauchy density; the dashed line is the normal distribution N(x₀, y₀²) at the same scale.</p>
+      <canvas id="cH" aria-label="Histogram of exit positions with theoretical density"></canvas>
+      <div class="read"><span>Samples <b id="rN">0</b></span><span>Fraction with |X<sub>T</sub> − x₀| &gt; 5y₀ <b id="rTail">–</b></span><span>Largest deviation <b id="rMax">–</b></span></div>
+    </section>
+  </div>
+
+  <section class="guide">
+    <h2>How to read it</h2>
+    <ol>
+      <li>The upper half-plane has only the real axis as its boundary. The vertical component Y is a one-dimensional Brownian motion and almost surely hits 0, so the path must leave through the real axis and nowhere else.</li>
+      <li>X and Y are independent, so T is determined by Y alone, and the position of X at time T is distributed as N(x₀, T). T itself is heavy-tailed (sometimes extremely long), so the variance is random, which produces exit points very far away.</li>
+      <li>The histogram follows the solid line, with a much heavier tail than the dashed one. In the fraction readout under the histogram, the Cauchy theoretical value is 12.6%, while under a normal distribution it is almost 0.</li>
+      <li>“Fast sample” does not simulate step by step; it uses the formula X<sub>T</sub> = x₀ + y₀·N′/N directly (N, N′ independent standard normals). It has the same distribution as the path simulation, and the exit-position statistics mix the two together.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cP = $('#cP'), cS = $('#cS'), cH = $('#cH');
+  const gP = cP.getContext('2d'), gS = cS.getContext('2d'), gH = cH.getContext('2d');
+
+  const W0 = -8, W1 = 8, V0 = -0.7, V1 = 5.7;
+  const BW = 0.25, NB = 64;
+  let x0 = 1, y0 = 1, speed = 2, paused = false;
+  let P, pts, finished = false, holdUntil = 0, lastT = null, lastX = null;
+  let counts, N, nearOut, outL, outR, maxDev, recent;
+
+  function randn(){
+    let u = 0; while(!u) u = Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*Math.random());
+  }
+
+  function resetStats(){
+    counts = new Array(NB).fill(0); N = 0; nearOut = 0; outL = 0; outR = 0; maxDev = 0; recent = [];
+  }
+  function addSample(x){
+    N++;
+    const i = Math.floor((x - W0)/BW);
+    if(i >= 0 && i < NB) counts[i]++; else if(x < W0) outL++; else outR++;
+    if(Math.abs(x - x0) > 5*y0) nearOut++;
+    maxDev = Math.max(maxDev, Math.abs(x - x0));
+    recent.push(x); if(recent.length > 800) recent.shift();
+  }
+
+  function newPath(){
+    P = {x:x0, y:y0, t:0}; pts = [[0, x0, y0]]; finished = false; lastT = null; lastX = null;
+  }
+
+  function finish(T, xT){
+    finished = true; lastT = T; lastX = xT;
+    pts.push([T, xT, 0]);
+    addSample(xT);
+  }
+
+  function stepPath(){
+    const y = P.y;
+    const dt = Math.min(1e4, Math.max(1e-3, y*y/16));
+    const sd = Math.sqrt(dt);
+    const ny = y + sd*randn();
+    let hit = false, s = 1;
+    if(ny <= 0){ hit = true; s = y/(y - ny); }
+    else if(Math.random() < Math.exp(-2*y*ny/dt)){ hit = true; s = 0.5; }
+    if(hit){
+      finish(P.t + s*dt, P.x + Math.sqrt(s*dt)*randn());
+      return;
+    }
+    P.x += sd*randn(); P.y = ny; P.t += dt;
+    pts.push([P.t, P.x, P.y]);
+  }
+
+  function fastSample(n){
+    for(let i = 0; i < n; i++){
+      let z = randn(); while(z === 0) z = randn();
+      addSample(x0 + y0*randn()/Math.abs(z));
+    }
+  }
+
+  function fit(cv){
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width*dpr)); cv.height = Math.max(1, Math.round(r.height*dpr));
+    cv._w = r.width; cv._h = r.height; cv._dpr = dpr;
+  }
+  let col;
+  function readColors(){
+    const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+    col = { fg:g('--fg'), muted:g('--muted'), grid:g('--grid'), left:g('--left'), right:g('--right'),
+            tint:g('--tint'), below:g('--below'), panel:g('--panel') };
+  }
+  function setup(g, cv){ g.setTransform(cv._dpr, 0, 0, cv._dpr, 0, 0); g.clearRect(0, 0, cv._w, cv._h); }
+  function fmt(v){ return Math.abs(v) >= 1000 ? v.toExponential(2) : v.toFixed(2); }
+
+  /* ---------- upper half-plane ---------- */
+  function drawPlane(){
+    const g = gP, w = cP._w, h = cP._h;
+    setup(g, cP);
+    const X = x => (x - W0)/(W1 - W0)*w, Y = y => h - (y - V0)/(V1 - V0)*h;
+    g.fillStyle = col.tint; g.fillRect(0, 0, w, Y(0));
+    g.fillStyle = col.below; g.fillRect(0, Y(0), w, h - Y(0));
+    g.strokeStyle = col.grid; g.lineWidth = 1;
+    for(let x = -8; x <= 8; x += 2){ g.beginPath(); g.moveTo(X(x), 0); g.lineTo(X(x), h); g.stroke(); }
+    for(let y = 0; y <= 5; y += 1){ g.beginPath(); g.moveTo(0, Y(y)); g.lineTo(w, Y(y)); g.stroke(); }
+    g.fillStyle = col.muted; g.font = '12px system-ui, sans-serif'; g.textAlign = 'center';
+    for(let x = -6; x <= 6; x += 2){ g.fillText(String(x), X(x), Y(0) + 15); }
+
+    // previous exit positions
+    g.strokeStyle = col.right; g.globalAlpha = 0.28; g.lineWidth = 1.5;
+    for(const x of recent){
+      if(x < W0 || x > W1) continue;
+      g.beginPath(); g.moveTo(X(x), Y(0)); g.lineTo(X(x), Y(0) + 16); g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.fillStyle = col.right; g.font = '12px system-ui, sans-serif';
+    if(outL){ g.textAlign = 'left'; g.fillText('‹ ' + outL, 6, Y(0) + 32); }
+    if(outR){ g.textAlign = 'right'; g.fillText(outR + ' ›', w - 6, Y(0) + 32); }
+
+    // real axis
+    g.strokeStyle = col.fg; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(w, Y(0)); g.stroke();
+
+    // start point and x0 directly below it
+    g.setLineDash([4, 4]); g.strokeStyle = col.muted; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(X(x0), Y(y0)); g.lineTo(X(x0), Y(0)); g.stroke(); g.setLineDash([]);
+    g.fillStyle = col.fg;
+    g.beginPath(); g.moveTo(X(x0), Y(0) - 1); g.lineTo(X(x0) - 5, Y(0) + 8); g.lineTo(X(x0) + 5, Y(0) + 8); g.closePath(); g.fill();
+
+    // path (clipped to the canvas)
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.clip();
+    g.strokeStyle = col.left; g.lineWidth = 1.4; g.globalAlpha = 0.85; g.lineJoin = 'round';
+    g.beginPath();
+    for(let i = 0; i < pts.length; i++){
+      const px = X(pts[i][1]), py = Y(pts[i][2]);
+      i ? g.lineTo(px, py) : g.moveTo(px, py);
+    }
+    g.stroke(); g.globalAlpha = 1;
+    g.restore();
+
+    g.fillStyle = col.panel; g.strokeStyle = col.fg; g.lineWidth = 1.6;
+    g.beginPath(); g.arc(X(x0), Y(y0), 5, 0, 2*Math.PI); g.fill(); g.stroke();
+    g.fillStyle = col.fg; g.textAlign = 'left'; g.fillText('z₀', X(x0) + 8, Y(y0) - 6);
+
+    // current position / exit
+    if(!finished){
+      const hx = X(P.x), hy = Y(P.y);
+      if(hx >= 0 && hx <= w && hy >= 0 && hy <= h){
+        g.fillStyle = col.left; g.beginPath(); g.arc(hx, hy, 5, 0, 2*Math.PI); g.fill();
+      }
+    } else {
+      const inView = lastX >= W0 && lastX <= W1;
+      const ex = X(Math.max(W0 + 0.35, Math.min(W1 - 0.35, lastX)));
+      g.fillStyle = col.right; g.strokeStyle = col.panel; g.lineWidth = 2;
+      g.beginPath(); g.arc(ex, Y(0), 6.5, 0, 2*Math.PI); g.fill(); g.stroke();
+      if(!inView){
+        g.textAlign = lastX < W0 ? 'left' : 'right';
+        g.fillText((lastX < W0 ? '◀ ' : '') + 'exit at x = ' + fmt(lastX) + (lastX < W0 ? '' : ' ▶'), lastX < W0 ? ex + 10 : ex - 10, Y(0) - 10);
+      }
+    }
+  }
+
+  /* ---------- time series ---------- */
+  function drawSeries(){
+    const g = gS, w = cS._w, h = cS._h;
+    setup(g, cS);
+    const L = 36, R = 12, T = 12, Bm = 24, pw = w - L - R, ph = h - T - Bm;
+    const tEnd = Math.max(0.05, pts[pts.length - 1][0]), sq = Math.sqrt(tEnd);
+    let vmin = 0, vmax = y0;
+    for(const p of pts){ vmin = Math.min(vmin, p[1]); vmax = Math.max(vmax, p[1], p[2]); }
+    vmin = Math.min(vmin, x0); vmax = Math.max(vmax, x0);
+    const pad = 0.08*(vmax - vmin || 1); vmin -= pad; vmax += pad;
+    const X = t => L + pw*Math.sqrt(t)/sq, Y = v => T + ph - ph*(v - vmin)/(vmax - vmin);
+
+    g.strokeStyle = col.grid; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+    g.strokeStyle = col.muted; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(L + pw, Y(0)); g.stroke();
+    g.setLineDash([3, 4]); g.beginPath(); g.moveTo(L, Y(x0)); g.lineTo(L + pw, Y(x0)); g.stroke(); g.setLineDash([]);
+    g.fillStyle = col.muted; g.font = '12px system-ui, sans-serif'; g.textAlign = 'right';
+    g.fillText('0', L - 5, Y(0) + 4); g.fillText('x₀', L - 5, Y(x0) + 4);
+    g.textAlign = 'right'; g.fillText('√t', L + pw, T + ph + 16);
+
+    const draw = (idx, color) => {
+      g.strokeStyle = color; g.lineWidth = 1.8; g.beginPath();
+      for(let i = 0; i < pts.length; i++){
+        const px = X(pts[i][0]), py = Y(pts[i][idx]);
+        i ? g.lineTo(px, py) : g.moveTo(px, py);
+      }
+      g.stroke();
+    };
+    draw(1, col.left); draw(2, col.right);
+
+    if(finished){
+      g.setLineDash([4, 4]); g.strokeStyle = col.fg; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(X(lastT), T); g.lineTo(X(lastT), T + ph); g.stroke(); g.setLineDash([]);
+      g.fillStyle = col.fg; g.textAlign = 'center'; g.fillText('T', X(lastT), T + ph + 16);
+      g.fillStyle = col.right; g.strokeStyle = col.panel; g.lineWidth = 2;
+      g.beginPath(); g.arc(X(lastT), Y(lastX), 5.5, 0, 2*Math.PI); g.fill(); g.stroke();
+    }
+  }
+
+  /* ---------- histogram ---------- */
+  function cauchy(x){ return y0/(Math.PI*((x - x0)*(x - x0) + y0*y0)); }
+  function normal(x){ return Math.exp(-(x - x0)*(x - x0)/(2*y0*y0))/(Math.sqrt(2*Math.PI)*y0); }
+
+  function drawHist(){
+    const g = gH, w = cH._w, h = cH._h;
+    setup(g, cH);
+    const L = 38, R = 10, T = 14, Bm = 24, pw = w - L - R, ph = h - T - Bm;
+    let top = 1/(Math.PI*y0);
+    if(N) for(const c of counts) top = Math.max(top, c/(N*BW));
+    top *= 1.12;
+    const X = x => L + pw*(x - W0)/(W1 - W0), Y = d => T + ph - ph*d/top;
+
+    g.strokeStyle = col.grid; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+    g.fillStyle = col.muted; g.font = '12px system-ui, sans-serif'; g.textAlign = 'center';
+    for(let x = -8; x <= 8; x += 4) g.fillText(String(x), X(x), T + ph + 16);
+    g.textAlign = 'right';
+    for(let k = 0; k <= 2; k++){ const d = top*k/2.2; g.fillText(d.toFixed(2), L - 5, Y(d) + 4); }
+
+    if(N){
+      g.fillStyle = col.left; g.globalAlpha = 0.45;
+      for(let i = 0; i < NB; i++){
+        const d = counts[i]/(N*BW), x = W0 + i*BW;
+        g.fillRect(X(x) + 0.5, Y(d), pw*BW/(W1 - W0) - 1, T + ph - Y(d));
+      }
+      g.globalAlpha = 1;
+    }
+    const curve = f => {
+      g.beginPath();
+      for(let k = 0; k <= 240; k++){
+        const x = W0 + (W1 - W0)*k/240, px = X(x), py = Y(f(x));
+        k ? g.lineTo(px, py) : g.moveTo(px, py);
+      }
+      g.stroke();
+    };
+    g.strokeStyle = col.muted; g.lineWidth = 1.6; g.setLineDash([5, 4]); curve(normal); g.setLineDash([]);
+    g.strokeStyle = col.right; g.lineWidth = 2.2; curve(cauchy);
+
+    // legend
+    g.font = '12px system-ui, sans-serif'; g.textAlign = 'left';
+    const lx = L + 10; let ly = T + 14;
+    g.fillStyle = col.left; g.globalAlpha = 0.45; g.fillRect(lx, ly - 8, 14, 9); g.globalAlpha = 1;
+    g.fillStyle = col.fg; g.fillText('Exit-position histogram', lx + 20, ly);
+    ly += 16; g.strokeStyle = col.right; g.lineWidth = 2.2; g.beginPath(); g.moveTo(lx, ly - 4); g.lineTo(lx + 14, ly - 4); g.stroke();
+    g.fillStyle = col.fg; g.fillText('Cauchy density', lx + 20, ly);
+    ly += 16; g.strokeStyle = col.muted; g.lineWidth = 1.6; g.setLineDash([4, 3]);
+    g.beginPath(); g.moveTo(lx, ly - 4); g.lineTo(lx + 14, ly - 4); g.stroke(); g.setLineDash([]);
+    g.fillStyle = col.fg; g.fillText('Normal N(x₀, y₀²)', lx + 20, ly);
+  }
+
+  function readouts(){
+    $('#rN').textContent = N;
+    $('#rTail').textContent = N ? (100*nearOut/N).toFixed(1) + '% (theory: 12.6%)' : '–';
+    $('#rMax').textContent = N ? fmt(maxDev) : '–';
+    $('#rT').textContent = finished ? fmt(lastT) : '…';
+    $('#rX').textContent = finished ? fmt(lastX) : '…';
+    $('#rPath').textContent = finished
+      ? 'Hit the real axis: exit position ' + fmt(lastX) + ', exit time ' + fmt(lastT) + '. The next path starts shortly.'
+      : 'Current time t = ' + P.t.toFixed(2) + ', current height Y = ' + P.y.toFixed(2);
+  }
+
+  function frame(ts){
+    if(!paused){
+      if(finished){ if(ts > holdUntil) newPath(); }
+      else{
+        for(let i = 0; i < speed; i++){
+          stepPath();
+          if(finished){ holdUntil = ts + 800; break; }
+        }
+      }
+    }
+    readColors();
+    drawPlane(); drawSeries(); drawHist(); readouts();
+    requestAnimationFrame(frame);
+  }
+
+  function restartAll(){ resetStats(); newPath(); }
+
+  $('#sx').addEventListener('input', e => { x0 = parseFloat(e.target.value); $('#ox').textContent = x0.toFixed(1); restartAll(); });
+  $('#sy').addEventListener('input', e => { y0 = parseFloat(e.target.value); $('#oy').textContent = y0.toFixed(1); restartAll(); });
+  $('#ss').addEventListener('input', e => { speed = parseInt(e.target.value, 10); $('#os').textContent = speed; });
+  $('#bPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
+  $('#bNew').addEventListener('click', newPath);
+  $('#bFast').addEventListener('click', () => fastSample(500));
+  $('#bClear').addEventListener('click', resetStats);
+
+  function fitAll(){ fit(cP); fit(cS); fit(cH); }
+  new ResizeObserver(fitAll).observe(document.body);
+  window.addEventListener('resize', fitAll);
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ paused = true; $('#bPause').textContent = 'Resume'; }
+
+  fitAll(); resetStats(); newPath();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
