@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformal Invariance of Brownian Motion · Debeilei Wang</title>
+<style>
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --fg:#15202b; --muted:#566574; --border:#d3dae1;
+  --grid:#c9d2db; --edge:#15202b; --left:#1d4ed8; --right:#be185d; --btn:#15202b; --btnfg:#ffffff;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#12161b; --panel:#1a2028; --fg:#e8edf2; --muted:#93a1af; --border:#2b343f;
+    --grid:#34404c; --edge:#e8edf2; --left:#6ea8ff; --right:#f472b6; --btn:#e8edf2; --btnfg:#12161b;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.55}
+main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+h1{font-family:var(--serif);font-size:clamp(26px,4vw,36px);margin:0 0 6px;font-weight:600;letter-spacing:.01em}
+.back{margin:0 0 14px;font-size:14px}
+.back a{color:var(--muted);text-decoration:none}
+.lede{margin:0 0 20px;color:var(--muted);max-width:62ch}
+.formula{font-family:var(--serif);font-style:italic;color:var(--fg)}
+.controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;margin:0 0 14px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;color:var(--fg);padding:9px 16px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);color:var(--btnfg)}
+.seg button+button{border-left:1px solid var(--border)}
+label.sl{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+label.sl output{font-family:var(--mono);color:var(--fg);min-width:3.2em}
+input[type=range]{width:150px;accent-color:var(--left)}
+button.plain{border:1px solid var(--border);background:var(--panel);color:var(--fg);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--left);outline-offset:2px}
+.modeNote{margin:0 0 16px;padding:10px 14px;border-left:3px solid var(--right);background:var(--panel);border-radius:0 8px 8px 0;font-size:15px;min-height:3.1em}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 12px 10px}
+.panel h2{font-family:var(--serif);font-size:18px;font-weight:600;margin:0 0 2px}
+.panel p.sub{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+canvas{display:block;width:100%}
+canvas.sq{aspect-ratio:1/1}
+.read{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:8px;font-size:13.5px;color:var(--muted)}
+.read b{font-family:var(--mono);font-weight:500;color:var(--fg)}
+.lower{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:16px}
+.lower canvas{height:140px}
+.guide{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.guide h2{font-family:var(--serif);font-size:18px;margin:0 0 6px;font-weight:600}
+.guide ol{margin:0;padding-left:1.2em;font-size:14.5px}
+.guide li{margin:6px 0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:baseline;margin-right:4px}
+</style>
+</head>
+<body>
+<main>
+  <p class="back"><a href="../index.html">← Debeilei Wang</a></p>
+  <h1>Conformal Invariance of Brownian Motion</h1>
+  <p class="lede">Take the conformal map <span class="formula">φ(z) = (z + a)/(1 + a z)</span>. It maps the unit disk bijectively onto itself but sends 0 to <span class="formula">a</span>. On the left is a Brownian path B<sub>t</sub> in the disk; on the right is its image φ(B<sub>t</sub>). Switch clocks and watch the motion on the right turn back into a uniform Brownian motion.</p>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Choose clock">
+      <button id="mReal" aria-pressed="true">Original clock t</button>
+      <button id="mNew" aria-pressed="false">New clock A<sub>t</sub></button>
+    </div>
+    <label class="sl">Map strength a <input id="sa" type="range" min="0" max="0.8" step="0.05" value="0.6"><output id="oa">0.60</output></label>
+    <label class="sl">Playback speed <input id="ss" type="range" min="1" max="14" step="1" value="4"><output id="os">4</output></label>
+    <button class="plain" id="bPause">Pause</button>
+    <button class="plain" id="bRestart">Restart</button>
+    <button class="plain" id="bClear">Clear exit points</button>
+  </div>
+
+  <p class="modeNote" id="modeNote"></p>
+
+  <div class="panels">
+    <section class="panel">
+      <h2>D: Brownian motion B<sub>t</sub> in the disk</h2>
+      <p class="sub">Background: warm where |φ′| is large, cool where |φ′| is small.</p>
+      <canvas id="cL" class="sq" aria-label="Left: Brownian path in the unit disk"></canvas>
+      <div class="read"><span>Original time t = <b id="rt">0.000</b></span><span>Current |φ′(B)|² = <b id="rs">1.00</b></span></div>
+    </section>
+    <section class="panel">
+      <h2>φ(D): image path φ(B<sub>t</sub>)</h2>
+      <p class="sub">The grid is the image of the left grid; lines still cross at right angles.</p>
+      <canvas id="cR" class="sq" aria-label="Right: image path"></canvas>
+      <div class="read"><span>New time A<sub>t</sub> = <b id="rA">0.000</b></span><span id="status">&nbsp;</span></div>
+    </section>
+  </div>
+
+  <div class="lower">
+    <section class="panel">
+      <h2>How the two clocks relate</h2>
+      <p class="sub">Horizontal axis: original time t. Vertical axis: new time A<sub>t</sub>. The slope of the curve is |φ′(B<sub>t</sub>)|².</p>
+      <canvas id="cC" aria-label="Curve comparing the old and new clocks"></canvas>
+    </section>
+    <section class="guide">
+      <h2>How to read it</h2>
+      <ol>
+        <li>Each dot is a sample point on the path. <span class="sw" style="background:var(--left)"></span>Blue dots are in the left panel, <span class="sw" style="background:var(--right)"></span>pink dots in the right panel; denser dots mean slower motion.</li>
+        <li>With the original clock, the dots on the left are evenly spaced. On the right the spacing varies, so φ(B) is not a uniform-speed Brownian motion.</li>
+        <li>With the new clock, each step is given only δ/|φ′|² of time. The spacing on the right becomes uniform everywhere, while on the left it varies. This is the time change in the theorem.</li>
+        <li>The distribution of exit points does not depend on the clock. The exit points on the right are exactly the images of those on the left; after a few hundred, the left ones look uniform while the right ones crowd toward the side where the start point a lies.</li>
+      </ol>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cL = $('#cL'), cR = $('#cR'), cC = $('#cC');
+  const gL = cL.getContext('2d'), gR = cR.getContext('2d'), gC = cC.getContext('2d');
+
+  let a = 0.6, mode = 'real', speed = 4, paused = false;
+  const DT = 1e-3, CAP = 0.02, TR = 500;
+  let B, t, A, trail, clockPts, finished, holdUntil = 0;
+  const exits = [];
+
+  const heat = document.createElement('canvas');
+  heat.width = heat.height = 120;
+
+  function phi(z){
+    const nx = z.x + a, ny = z.y, dx = 1 + a*z.x, dy = a*z.y, d2 = dx*dx + dy*dy;
+    return { x:(nx*dx + ny*dy)/d2, y:(ny*dx - nx*dy)/d2 };
+  }
+  function speed2(z){
+    const dx = 1 + a*z.x, dy = a*z.y, d2 = dx*dx + dy*dy;
+    return (1 - a*a)*(1 - a*a)/(d2*d2);
+  }
+  function randn(){
+    let u = 0, v = 0;
+    while(!u) u = Math.random();
+    v = Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  function reset(){
+    B = {x:0, y:0}; t = 0; A = 0; trail = [{x:0, y:0}]; clockPts = [[0, 0]]; finished = false;
+  }
+
+  function buildHeat(){
+    const g = heat.getContext('2d'), N = 120, img = g.createImageData(N, N);
+    for(let j = 0; j < N; j++){
+      for(let i = 0; i < N; i++){
+        const x = (i + .5)/N*2 - 1, y = 1 - (j + .5)/N*2, k = 4*(j*N + i);
+        if(x*x + y*y >= 1){ img.data[k+3] = 0; continue; }
+        const v = Math.max(-1, Math.min(1, Math.log10(speed2({x, y}))/1.5));
+        const warm = v > 0, w = Math.abs(v);
+        img.data[k]   = warm ? 235 : 40;
+        img.data[k+1] = warm ? 150 : 150;
+        img.data[k+2] = warm ? 40  : 190;
+        img.data[k+3] = Math.round(255*(0.04 + 0.34*w));
+      }
+    }
+    g.putImageData(img, 0, 0);
+  }
+
+  function stepOnce(){
+    const s2 = speed2(B);
+    const dt = mode === 'real' ? DT : Math.min(DT/s2, CAP);
+    const sd = Math.sqrt(dt);
+    const nx = B.x + sd*randn(), ny = B.y + sd*randn();
+    t += dt; A += s2*dt;
+    if(nx*nx + ny*ny >= 1){
+      const dx = nx - B.x, dy = ny - B.y;
+      const qa = dx*dx + dy*dy, qb = 2*(B.x*dx + B.y*dy), qc = B.x*B.x + B.y*B.y - 1;
+      const s = (-qb + Math.sqrt(qb*qb - 4*qa*qc))/(2*qa);
+      t += (s - 1)*dt; A += (s - 1)*s2*dt;
+      const ex = B.x + s*dx, ey = B.y + s*dy, n = Math.hypot(ex, ey);
+      B = {x:ex/n, y:ey/n};
+      trail.push(B); clockPts.push([t, A]);
+      exits.push(Math.atan2(B.y, B.x)); if(exits.length > 800) exits.shift();
+      finished = true; return;
+    }
+    B = {x:nx, y:ny};
+    trail.push(B); if(trail.length > TR) trail.shift();
+    clockPts.push([t, A]);
+  }
+
+  function fit(cv){
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width*dpr)); cv.height = Math.max(1, Math.round(r.height*dpr));
+    cv._w = r.width; cv._h = r.height; cv._dpr = dpr;
+  }
+
+  let col;
+  function readColors(){
+    const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+    col = { grid:g('--grid'), edge:g('--edge'), left:g('--left'), right:g('--right'),
+            disk:g('--panel'), fg:g('--fg'), muted:g('--muted') };
+  }
+
+  function drawPanel(g, cv, m, withHeat, color){
+    const w = cv._w, h = cv._h;
+    g.setTransform(cv._dpr, 0, 0, cv._dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    const cx = w/2, cy = h/2, R = Math.min(w, h)*0.455;
+    const P = z => { const q = m(z); return [cx + R*q.x, cy - R*q.y]; };
+
+    g.beginPath(); g.arc(cx, cy, R, 0, 2*Math.PI); g.fillStyle = col.disk; g.fill();
+    if(withHeat){
+      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 2*Math.PI); g.clip();
+      g.imageSmoothingEnabled = true; g.drawImage(heat, cx - R, cy - R, 2*R, 2*R); g.restore();
+    }
+    g.strokeStyle = col.grid; g.lineWidth = 1;
+    for(const r of [.2, .4, .6, .8]){
+      g.beginPath();
+      for(let k = 0; k <= 96; k++){
+        const th = 2*Math.PI*k/96, p = P({x:r*Math.cos(th), y:r*Math.sin(th)});
+        k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]);
+      }
+      g.stroke();
+    }
+    for(let j = 0; j < 12; j++){
+      const th = 2*Math.PI*j/12;
+      g.beginPath();
+      for(let k = 0; k <= 30; k++){
+        const r = k/30, p = P({x:r*Math.cos(th), y:r*Math.sin(th)});
+        k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]);
+      }
+      g.stroke();
+    }
+    g.strokeStyle = col.edge; g.lineWidth = 1.6;
+    g.beginPath(); g.arc(cx, cy, R, 0, 2*Math.PI); g.stroke();
+
+    // recorded exit points
+    g.fillStyle = color; g.globalAlpha = 0.5;
+    for(const th of exits){
+      const p = P({x:Math.cos(th), y:Math.sin(th)});
+      g.beginPath(); g.arc(p[0], p[1], 2.4, 0, 2*Math.PI); g.fill();
+    }
+    g.globalAlpha = 1;
+
+    // starting point
+    const p0 = P({x:0, y:0});
+    g.strokeStyle = col.fg; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(p0[0], p0[1], 4, 0, 2*Math.PI); g.stroke();
+
+    // path and sample points
+    const n = trail.length;
+    g.strokeStyle = color; g.globalAlpha = 0.28; g.lineWidth = 1;
+    g.beginPath();
+    for(let i = 0; i < n; i++){ const p = P(trail[i]); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }
+    g.stroke();
+    g.fillStyle = color;
+    for(let i = 0; i < n; i++){
+      const p = P(trail[i]);
+      g.globalAlpha = 0.22 + 0.78*i/n;
+      g.beginPath(); g.arc(p[0], p[1], 1.7, 0, 2*Math.PI); g.fill();
+    }
+    g.globalAlpha = 1;
+    const hp = P(trail[n - 1]);
+    g.fillStyle = color; g.strokeStyle = col.disk; g.lineWidth = 2;
+    g.beginPath(); g.arc(hp[0], hp[1], 5.5, 0, 2*Math.PI); g.fill(); g.stroke();
+  }
+
+  function drawClock(){
+    const g = gC, w = cC._w, h = cC._h;
+    g.setTransform(cC._dpr, 0, 0, cC._dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    const L = 14, Rr = 10, T = 10, Bm = 18, pw = w - L - Rr, ph = h - T - Bm;
+    g.strokeStyle = col.grid; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+    const tm = Math.max(0.05, t), am = Math.max(0.05, A);
+    g.strokeStyle = col.right; g.lineWidth = 2; g.beginPath();
+    for(let i = 0; i < clockPts.length; i++){
+      const x = L + pw*clockPts[i][0]/tm, y = T + ph - ph*clockPts[i][1]/am;
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke();
+    g.fillStyle = col.muted; g.font = '12px system-ui, sans-serif';
+    g.textAlign = 'right'; g.fillText('t', L + pw, T + ph + 14);
+    g.textAlign = 'left'; g.fillText('A', L + 4, T + 8);
+  }
+
+  const modeText = {
+    real:'Original clock: every step on the left takes the same time. On the right the spacing varies: the image moves fast where |φ′| is large and crawls where |φ′| is small, so φ(B) is not a uniform-speed Brownian motion.',
+    new:'New clock A_t: each step is given only δ/|φ′|² of time. The spacing on the right is now uniform, so φ(B) is a standard Brownian motion; on the left the dots get denser where |φ′| is large.'
+  };
+
+  function setMode(m){
+    mode = m;
+    $('#mReal').setAttribute('aria-pressed', m === 'real');
+    $('#mNew').setAttribute('aria-pressed', m === 'new');
+    $('#modeNote').textContent = modeText[m];
+    reset();
+  }
+
+  function frame(ts){
+    if(!paused){
+      if(finished){ if(ts > holdUntil) reset(); }
+      else{
+        for(let i = 0; i < speed; i++){
+          stepOnce();
+          if(finished){ holdUntil = ts + 900; break; }
+        }
+      }
+    }
+    readColors();
+    drawPanel(gL, cL, z => z, true, col.left);
+    drawPanel(gR, cR, phi, false, col.right);
+    drawClock();
+    $('#rt').textContent = t.toFixed(3);
+    $('#rA').textContent = A.toFixed(3);
+    $('#rs').textContent = speed2(B).toFixed(2);
+    $('#status').textContent = finished ? 'Reached the boundary; restarting shortly' : 'Exit points recorded: ' + exits.length;
+    requestAnimationFrame(frame);
+  }
+
+  $('#mReal').addEventListener('click', () => setMode('real'));
+  $('#mNew').addEventListener('click', () => setMode('new'));
+  $('#sa').addEventListener('input', e => {
+    a = parseFloat(e.target.value); $('#oa').textContent = a.toFixed(2);
+    exits.length = 0; buildHeat(); reset();
+  });
+  $('#ss').addEventListener('input', e => { speed = parseInt(e.target.value, 10); $('#os').textContent = speed; });
+  $('#bPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
+  $('#bRestart').addEventListener('click', reset);
+  $('#bClear').addEventListener('click', () => { exits.length = 0; });
+
+  function fitAll(){ fit(cL); fit(cR); fit(cC); }
+  new ResizeObserver(fitAll).observe(document.body);
+  window.addEventListener('resize', fitAll);
+
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    paused = true; $('#bPause').textContent = 'Resume';
+  }
+
+  fitAll(); buildHeat(); setMode('real');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
